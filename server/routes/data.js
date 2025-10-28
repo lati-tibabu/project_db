@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const storage = require('../utils/storage');
-const { executeQuery, getTables, getTableSchema, getTableData } = require('../utils/database');
+const { executeQuery, getTables, getTableSchema, getTableData, sanitizeTableName } = require('../utils/database');
 
 // Get all tables for a database
 router.get('/:dbId/tables', async (req, res) => {
@@ -97,7 +97,7 @@ router.post('/:dbId/tables/:tableName/rows', async (req, res) => {
       return res.status(400).json({ error: 'Data object is required' });
     }
     
-    const tableName = req.params.tableName.replace(/[^a-zA-Z0-9_]/g, '');
+    const tableName = sanitizeTableName(req.params.tableName);
     const columns = Object.keys(data);
     const values = Object.values(data);
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
@@ -133,7 +133,7 @@ router.put('/:dbId/tables/:tableName/rows', async (req, res) => {
       return res.status(400).json({ error: 'Where condition is required' });
     }
     
-    const tableName = req.params.tableName.replace(/[^a-zA-Z0-9_]/g, '');
+    const tableName = sanitizeTableName(req.params.tableName);
     const setColumns = Object.keys(data);
     const setValues = Object.values(data);
     const whereColumns = Object.keys(where);
@@ -170,7 +170,7 @@ router.delete('/:dbId/tables/:tableName/rows', async (req, res) => {
       return res.status(400).json({ error: 'Where condition is required' });
     }
     
-    const tableName = req.params.tableName.replace(/[^a-zA-Z0-9_]/g, '');
+    const tableName = sanitizeTableName(req.params.tableName);
     const whereColumns = Object.keys(where);
     const whereValues = Object.values(where);
     
