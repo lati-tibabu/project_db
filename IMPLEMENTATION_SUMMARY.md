@@ -1,6 +1,6 @@
 # Implementation Summary
 
-## Project: PostgreSQL Database Manager
+## Project: PostaDesk
 
 ### Objective
 Build a configurable PostgreSQL database system with a user-friendly frontend that allows users to add and configure databases via UI, with credentials securely stored on the device, enabling full data interaction capabilities.
@@ -13,6 +13,7 @@ Build a configurable PostgreSQL database system with a user-friendly frontend th
 - Refactored core React components (`DatabaseForm`, `DatabaseList`, `Home`, `DataViewer`) to dispatch Redux thunks for fetching, creating, deleting, and refreshing database metadata.
 - Introduced a richer table creation flow with foreign key support in both the API (`POST /api/data/:dbId/tables`) and the UI, including refresh controls that keep schema and data views in sync.
 - Added a reusable API client wrapper for the new endpoints and verified a clean production build with `npm run build` after the Redux integration.
+- **Added dedicated database creation functionality**: Created separate UI for creating databases on PostgreSQL servers and automatically adding them to the managed database list. Users can now choose between "Add Database" (connect to existing) and "Create & Add Database" (create new on server and add to system).
 
 ### What Was Built
 
@@ -21,6 +22,7 @@ Build a configurable PostgreSQL database system with a user-friendly frontend th
 - **Database Routes** (`/api/databases`):
   - GET: List all database configurations
   - POST: Add new database with connection testing
+  - POST /create: Create database on server without saving configuration
   - PUT: Update database configuration
   - DELETE: Remove database configuration
   - POST /:id/test: Test database connection
@@ -44,6 +46,7 @@ Build a configurable PostgreSQL database system with a user-friendly frontend th
 #### 2. Frontend System (React + Vite)
 - **Components**:
   - DatabaseForm: Add/configure database connections
+  - DatabaseCreationForm: Create databases on servers without adding to managed list
   - DatabaseList: Display and manage configured databases
   - DataViewer: Browse tables, schemas, and data
   - QueryEditor: Execute SQL queries and view results
@@ -141,6 +144,7 @@ Build a configurable PostgreSQL database system with a user-friendly frontend th
 
 ### Key Features
 ✨ Multi-database support
+✨ Database creation on PostgreSQL servers with automatic system integration
 ✨ Encrypted credential storage
 ✨ Connection testing before save
 ✨ Table and schema browsing

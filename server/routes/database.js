@@ -222,4 +222,34 @@ router.post('/:id/test', async (req, res) => {
   }
 });
 
+// Create database on server without saving configuration
+router.post('/create', async (req, res) => {
+  try {
+    const { host, port, database, user, password, ssl } = req.body;
+    const parsedPort = port ? parseInt(port, 10) : NaN;
+    const normalizedPort = Number.isFinite(parsedPort) ? parsedPort : 5432;
+    const sslEnabled = toBoolean(ssl);
+    
+    // Validate required fields
+    if (!host || !database || !user || !password) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['host', 'database', 'user', 'password']
+      });
+    }
+    
+    // Create the database on the server
+    const adminCfg = { host, port: normalizedPort, database: 'postgres', user, password, ssl: sslEnabled };
+    try {
+      await createDatabaseIfNotExists(adminCfg, database);
+    } catch (err) {
+      return res.status(400).json({ error: 'Failed to create database on server', message: err.message });
+    }
+    
+    res.status(201).json({ message: `Database '${database}' created successfully on ${host}:${normalizedPort}` });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create database', message: error.message });
+  }
+});
+
 module.exports = router;

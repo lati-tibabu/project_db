@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@reduxjs/toolkit": "^2.9.2",
     "@vitejs/plugin-react": "^5.1.0",
     "axios": "^1.13.0",

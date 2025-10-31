@@ -1,4 +1,4 @@
-# PostgreSQL Database Manager
+# PostaDesk
 
 A configurable PostgreSQL database system with a user-friendly frontend. Users can add and configure databases via UI, with credentials securely stored on the device. The system allows full data interaction—viewing, editing, querying—and is easily adaptable for projects like e-commerce, e-learning, or task management.
 
@@ -65,7 +65,7 @@ See `examples/ecommerce-setup.md` for a complete e-commerce implementation examp
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd project_db
+   cd postadesk
    ```
 
 2. **Install backend dependencies**
@@ -223,7 +223,7 @@ LEFT JOIN users u ON t.assigned_user_id = u.id;
 ## Project Structure
 
 ```
-project_db/
+postadesk/
 ├── server/
 │   ├── index.js              # Express server
 │   ├── routes/

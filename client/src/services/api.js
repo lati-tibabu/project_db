@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE_URL = '/api';
 
+// Configure axios to send credentials
+axios.defaults.withCredentials = true;
+
 // Database Configuration APIs
 export const getDatabases = async () => {
   const response = await axios.get(`${API_BASE_URL}/databases`);
@@ -104,5 +107,68 @@ export const updateApp = async (id, app) => {
 
 export const deleteApp = async (id) => {
   const response = await axios.delete(`${API_BASE_URL}/apps/${id}`);
+  return response.data;
+};
+
+// Authentication APIs
+export const loginToApp = async (appId, username, password) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/login/${appId}`, { username, password });
+  return response.data;
+};
+
+export const logoutFromApp = async (appId) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/logout/${appId}`);
+  return response.data;
+};
+
+export const checkAuthStatus = async (appId) => {
+  const response = await axios.get(`${API_BASE_URL}/auth/status/${appId}`);
+  return response.data;
+};
+
+export const changePassword = async (appId, currentPassword, newPassword) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/change-password/${appId}`, { currentPassword, newPassword });
+  return response.data;
+};
+
+// User Management APIs
+export const getUsers = async (appId) => {
+  const response = await axios.get(`${API_BASE_URL}/auth/users/${appId}`);
+  return response.data;
+};
+
+export const createUser = async (appId, userData) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/users/${appId}`, userData);
+  return response.data;
+};
+
+export const updateUser = async (appId, userId, userData) => {
+  const response = await axios.put(`${API_BASE_URL}/auth/users/${appId}/${userId}`, userData);
+  return response.data;
+};
+
+export const deleteUser = async (appId, userId) => {
+  const response = await axios.delete(`${API_BASE_URL}/auth/users/${appId}/${userId}`);
+  return response.data;
+};
+
+// Dynamic API Documentation
+export const getApiDocumentation = async (appId) => {
+  const response = await axios.get(`${API_BASE_URL}/dynamic/docs/${appId}`);
+  return response.data;
+};
+
+// Dynamic API calls
+export const callDynamicApi = async (method, appId, tableName, data = null, id = null) => {
+  const url = id
+    ? `${API_BASE_URL}/dynamic/api/${appId}/${tableName}/${id}`
+    : `${API_BASE_URL}/dynamic/api/${appId}/${tableName}`;
+
+  const config = { method, url };
+  if (data && (method === 'post' || method === 'put')) {
+    config.data = data;
+  }
+
+  const response = await axios(config);
   return response.data;
 };

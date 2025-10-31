@@ -11,11 +11,17 @@ function AppsBar() {
   const openAppIds = useSelector(s => s.apps.openAppIds);
 
   const [form, setForm] = useState({ name: '', databaseId: '', description: '' });
+  const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'default');
 
   useEffect(() => {
     if (status === 'idle') dispatch(fetchApps());
     dispatch(fetchDatabases());
   }, [status, dispatch]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('theme', currentTheme);
+  }, [currentTheme]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -31,7 +37,18 @@ function AppsBar() {
 
   return (
     <div className="apps-bar card">
-      <h3>Apps</h3>
+      <div className="apps-bar-header">
+        <h3>Apps</h3>
+        <div className="theme-selector">
+          <label>Theme:</label>
+          <select value={currentTheme} onChange={e => setCurrentTheme(e.target.value)}>
+            <option value="default">Default</option>
+            <option value="dark">Dark</option>
+            <option value="purple">Purple</option>
+            <option value="green">Green</option>
+          </select>
+        </div>
+      </div>
       <div className="apps-list">
         {apps.map(a => (
           <div

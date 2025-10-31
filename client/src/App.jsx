@@ -10,7 +10,7 @@ function App() {
         <Route path="/" element={
           <>
             <header className="header">
-              <h1>PostgreSQL Database Manager</h1>
+              <h1>PostaDesk</h1>
               <p>Configure and manage your PostgreSQL databases with ease</p>
             </header>
             <div className="container">
