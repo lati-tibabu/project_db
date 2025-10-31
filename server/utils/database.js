@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const format = require('pg-format');
 
 /**
  * Create a PostgreSQL connection pool
@@ -34,6 +35,29 @@ async function testConnection(config) {
   } catch (error) {
     await pool.end();
     return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Create database if it does not exist using an admin connection.
+ * @param {Object} adminConfig - Connection config to an admin database (e.g., database: 'postgres')
+ * @param {string} dbName - Database name to create
+ */
+async function createDatabaseIfNotExists(adminConfig, dbName) {
+  const pool = createPool(adminConfig);
+  try {
+    const client = await pool.connect();
+    // Use pg-format to safely format identifiers
+    const safe = format('CREATE DATABASE %I', dbName);
+    await client.query(safe);
+    client.release();
+  } catch (err) {
+    // 42P04 = duplicate_database
+    if (err.code !== '42P04') {
+      throw err;
+    }
+  } finally {
+    await pool.end();
   }
 }
 
@@ -143,6 +167,54 @@ async function getTableData(config, tableName, limit = 100, offset = 0) {
   return await executeQuery(config, query, [limit, offset]);
 }
 
+/**
+ * Create a table with specified columns and foreign keys
+ * @param {Object} config - Database configuration
+ * @param {string} tableName - Name of the table to create
+ * @param {Array} columns - Array of column definitions: {name, type, nullable, defaultValue, isPrimaryKey}
+ * @param {Array} foreignKeys - Array of FK definitions: {column, referencesTable, referencesColumn, onDelete, onUpdate}
+ * @returns {Promise<Object>} Result of the CREATE TABLE query
+ */
+async function createTable(config, tableName, columns, foreignKeys = []) {
+  const safeTable = format.ident(sanitizeTableName(tableName));
+
+  // Build column definitions
+  const columnDefs = columns.map(col => {
+    const safeName = format.ident(sanitizeTableName(col.name));
+    let def = `${safeName} ${col.type}`;
+    if (col.isPrimaryKey) def += ' PRIMARY KEY';
+    if (col.nullable === false) def += ' NOT NULL';
+
+    const hasDefault = col.defaultValue !== undefined && col.defaultValue !== null && !(typeof col.defaultValue === 'string' && col.defaultValue.trim() === '');
+    if (hasDefault) {
+      if (typeof col.defaultValue === 'string' && col.defaultValue.startsWith('raw:')) {
+        def += ` DEFAULT ${col.defaultValue.slice(4)}`;
+      } else if (typeof col.defaultValue === 'string') {
+        def += ` DEFAULT ${format.literal(col.defaultValue)}`;
+      } else {
+        def += ` DEFAULT ${col.defaultValue}`;
+      }
+    }
+    return def;
+  }).join(', ');
+
+  // Build foreign key constraints
+  const fkDefs = foreignKeys.map(fk => {
+    const safeCol = format.ident(sanitizeTableName(fk.column));
+    const safeRefTable = format.ident(sanitizeTableName(fk.referencesTable));
+    const safeRefCol = format.ident(sanitizeTableName(fk.referencesColumn));
+    let def = `FOREIGN KEY (${safeCol}) REFERENCES ${safeRefTable}(${safeRefCol})`;
+    if (fk.onDelete) def += ` ON DELETE ${fk.onDelete}`;
+    if (fk.onUpdate) def += ` ON UPDATE ${fk.onUpdate}`;
+    return def;
+  }).join(', ');
+
+  const allDefs = [columnDefs, fkDefs].filter(Boolean).join(', ');
+  const query = `CREATE TABLE ${safeTable} (${allDefs})`;
+
+  return await executeQuery(config, query);
+}
+
 module.exports = {
   createPool,
   testConnection,
@@ -150,5 +222,7 @@ module.exports = {
   getTables,
   getTableSchema,
   getTableData,
-  sanitizeTableName
+  sanitizeTableName,
+  createDatabaseIfNotExists,
+  createTable
 };

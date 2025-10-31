@@ -10,8 +10,36 @@ A configurable PostgreSQL database system with a user-friendly frontend. Users c
 - ✅ **Data Viewing**: Browse tables, view schema, and explore data with pagination
 - ✅ **Query Editor**: Execute custom SQL queries (SELECT, INSERT, UPDATE, DELETE)
 - ✅ **Data Management**: View, add, update, and delete records through the UI
+- ✅ **App Builder**: Create custom applications with drag-and-drop components
+- ✅ **Dedicated App Routes**: Each app has its own URL for direct access
+- ✅ **Multi-Tab App Management**: Open multiple apps in tabs or separate browser windows
+- ✅ **Component Library**: Pre-built components (Dashboard, Data View, Forms, Charts)
 - ✅ **Responsive Design**: Clean, modern interface that works on desktop and mobile
 - ✅ **Security**: SQL injection protection, encrypted passwords, parameterized queries
+
+## App Builder Features
+
+The system includes a powerful app builder that allows you to create custom applications:
+
+### App Management
+- **Create Apps**: Build custom applications linked to your databases
+- **Component System**: Add pre-built components like dashboards, data views, forms, and charts
+- **Dedicated URLs**: Each app gets its own route (e.g., `/app/app-id`) for direct access
+- **Multi-Tab Interface**: Open multiple apps in tabs within the dashboard
+- **Browser Tabs**: Open apps in separate browser windows/tabs for multitasking
+
+### Available Components
+- **Dashboard**: Overview widgets with statistics and metrics
+- **Data View**: Browse and manage database tables with pagination
+- **Form View**: Create forms for data entry linked to database tables
+- **Chart View**: Visualize data with bar, line, and pie charts
+
+### Example Applications
+- **E-Commerce Store**: Complete online store with products, orders, customers, and analytics
+- **E-Learning Platform**: Course management, student tracking, and progress analytics
+- **Task Management**: Project tracking, team collaboration, and productivity metrics
+
+See `examples/ecommerce-setup.md` for a complete e-commerce implementation example.
 
 ## Technology Stack
 

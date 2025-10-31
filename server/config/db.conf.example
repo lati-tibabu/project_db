@@ -1,0 +1,24 @@
+# Example PostgreSQL .conf file
+# Place a copy at server/config/db.conf (or provide an absolute path when using the endpoint)
+# Keys: name, host, port, user, password, database, ssl, create_on_server
+# ssl and create_on_server are optional booleans (use true/false)
+
+# A friendly name for this config (used in the UI/storage)
+name=local_pg_admin
+
+# Postgres server host and port
+host=127.0.0.1
+port=5432
+
+# Administrative user with privilege to create databases if you want to auto-create
+user=postgres
+password=changeme
+
+# Name of the database to create/connect to
+database=my_new_database
+
+# If true, the server will attempt to run CREATE DATABASE <database> on the server
+create_on_server=true
+
+# If your server requires SSL set to true
+ssl=false

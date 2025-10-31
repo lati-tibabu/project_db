@@ -5,6 +5,15 @@
 ### Objective
 Build a configurable PostgreSQL database system with a user-friendly frontend that allows users to add and configure databases via UI, with credentials securely stored on the device, enabling full data interaction capabilities.
 
+### Recent Enhancements
+
+- Added support for importing PostgreSQL connection settings from `.conf` files, including optional server-side database creation via the new `loadConfig` helper and `createDatabaseIfNotExists` utility.
+- Extended the database routes with a `/from-conf` endpoint and safer database bootstrap logic so privileged users can create databases directly from configuration files.
+- Implemented Redux Toolkit on the frontend to persist database selections, table data, pagination, and asynchronous request states across the UI.
+- Refactored core React components (`DatabaseForm`, `DatabaseList`, `Home`, `DataViewer`) to dispatch Redux thunks for fetching, creating, deleting, and refreshing database metadata.
+- Introduced a richer table creation flow with foreign key support in both the API (`POST /api/data/:dbId/tables`) and the UI, including refresh controls that keep schema and data views in sync.
+- Added a reusable API client wrapper for the new endpoints and verified a clean production build with `npm run build` after the Redux integration.
+
 ### What Was Built
 
 #### 1. Backend System (Node.js + Express)

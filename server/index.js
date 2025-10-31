@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const databaseRoutes = require('./routes/database');
 const dataRoutes = require('./routes/data');
+const appsRoutes = require('./routes/apps');
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/api/databases', databaseRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/apps', appsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

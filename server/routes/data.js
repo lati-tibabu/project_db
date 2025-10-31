@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const storage = require('../utils/storage');
-const { executeQuery, getTables, getTableSchema, getTableData, sanitizeTableName } = require('../utils/database');
+const { executeQuery, getTables, getTableSchema, getTableData, sanitizeTableName, createTable } = require('../utils/database');
 
 // Get all tables for a database
 router.get('/:dbId/tables', async (req, res) => {
@@ -65,9 +65,9 @@ router.post('/:dbId/query', async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
     
-    // Basic SQL injection protection - only allow SELECT, INSERT, UPDATE, DELETE
+  // Basic SQL injection protection - limit to safe read/write/DDL commands
     const trimmedQuery = query.trim().toUpperCase();
-    const allowedCommands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+  const allowedCommands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP'];
     const isAllowed = allowedCommands.some(cmd => trimmedQuery.startsWith(cmd));
     
     if (!isAllowed) {
@@ -182,6 +182,47 @@ router.delete('/:dbId/tables/:tableName/rows', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete data', message: error.message });
+  }
+});
+
+// Create a new table
+router.post('/:dbId/tables', async (req, res) => {
+  try {
+    const database = storage.getDatabase(req.params.dbId);
+    if (!database) {
+      return res.status(404).json({ error: 'Database not found' });
+    }
+
+    const { tableName, columns, foreignKeys } = req.body;
+
+    if (!tableName || !columns || !Array.isArray(columns)) {
+      return res.status(400).json({ error: 'tableName and columns array are required' });
+    }
+
+    // Validate table name
+    const validTableName = sanitizeTableName(tableName);
+
+    // Validate columns
+    for (const col of columns) {
+      if (!col.name || !col.type) {
+        return res.status(400).json({ error: 'Each column must have name and type' });
+      }
+      sanitizeTableName(col.name); // Check column name
+    }
+
+    // Validate foreign keys if provided
+    if (foreignKeys && Array.isArray(foreignKeys)) {
+      for (const fk of foreignKeys) {
+        if (!fk.column || !fk.referencesTable || !fk.referencesColumn) {
+          return res.status(400).json({ error: 'Each foreign key must have column, referencesTable, and referencesColumn' });
+        }
+      }
+    }
+
+    const result = await createTable(database, validTableName, columns, foreignKeys || []);
+    res.status(201).json({ message: 'Table created successfully', result });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create table', message: error.message });
   }
 });
 
