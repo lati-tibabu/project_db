@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 // Create a new app
 router.post('/', async (req, res) => {
   try {
-    const { name, databaseId, description } = req.body;
+    const { name, databaseId, description, authEnabled } = req.body;
 
     if (!name || !databaseId) {
       return res.status(400).json({
@@ -31,41 +31,44 @@ router.post('/', async (req, res) => {
       name,
       databaseId,
       description: description || '',
+      authEnabled: authEnabled !== undefined ? authEnabled : false, // Default to false (no auth required)
       components: []
     });
 
-    // Create users table in the database
-    try {
-      const dbConfig = getDatabase(databaseId);
-      if (dbConfig) {
-        // Create users table
-        await createTable(dbConfig, 'users', [
-          { name: 'id', type: 'SERIAL', isPrimaryKey: true },
-          { name: 'username', type: 'VARCHAR(255)', nullable: false },
-          { name: 'password_hash', type: 'VARCHAR(255)', nullable: false },
-          { name: 'email', type: 'VARCHAR(255)' },
-          { name: 'full_name', type: 'VARCHAR(255)' },
-          { name: 'role', type: 'VARCHAR(50)', defaultValue: 'viewer' },
-          { name: 'is_active', type: 'BOOLEAN', defaultValue: 'true' },
-          { name: 'last_login', type: 'TIMESTAMP' },
-          { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'raw:NOW()' },
-          { name: 'updated_at', type: 'TIMESTAMP', defaultValue: 'raw:NOW()' }
-        ]);
+    // Only create users table if authentication is enabled
+    if (authEnabled) {
+      try {
+        const dbConfig = getDatabase(databaseId);
+        if (dbConfig) {
+          // Create users table
+          await createTable(dbConfig, 'users', [
+            { name: 'id', type: 'SERIAL', isPrimaryKey: true },
+            { name: 'username', type: 'VARCHAR(255)', nullable: false },
+            { name: 'password_hash', type: 'VARCHAR(255)', nullable: false },
+            { name: 'email', type: 'VARCHAR(255)' },
+            { name: 'full_name', type: 'VARCHAR(255)' },
+            { name: 'role', type: 'VARCHAR(50)', defaultValue: 'viewer' },
+            { name: 'is_active', type: 'BOOLEAN', defaultValue: 'true' },
+            { name: 'last_login', type: 'TIMESTAMP' },
+            { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'raw:NOW()' },
+            { name: 'updated_at', type: 'TIMESTAMP', defaultValue: 'raw:NOW()' }
+          ]);
 
-        // Create unique index on username
-        await executeQuery(dbConfig, 'CREATE UNIQUE INDEX idx_users_username ON users(username)');
-        await executeQuery(dbConfig, 'CREATE UNIQUE INDEX idx_users_email ON users(email)');
+          // Create unique index on username
+          await executeQuery(dbConfig, 'CREATE UNIQUE INDEX idx_users_username ON users(username)');
+          await executeQuery(dbConfig, 'CREATE UNIQUE INDEX idx_users_email ON users(email)');
 
-        // Insert default admin user with more details
-        const hashedPassword = await bcrypt.hash('admin', 10);
-        await executeQuery(dbConfig, 
-          'INSERT INTO users (username, password_hash, email, full_name, role) VALUES ($1, $2, $3, $4, $5)',
-          ['admin', hashedPassword, 'admin@example.com', 'System Administrator', 'admin']
-        );
+          // Insert default admin user with more details
+          const hashedPassword = await bcrypt.hash('admin', 10);
+          await executeQuery(dbConfig, 
+            'INSERT INTO users (username, password_hash, email, full_name, role) VALUES ($1, $2, $3, $4, $5)',
+            ['admin', hashedPassword, 'admin@example.com', 'System Administrator', 'admin']
+          );
+        }
+      } catch (dbError) {
+        console.error('Failed to setup users table:', dbError);
+        // Don't fail the app creation if table creation fails
       }
-    } catch (dbError) {
-      console.error('Failed to setup users table:', dbError);
-      // Don't fail the app creation if table creation fails
     }
 
     res.status(201).json(newApp);

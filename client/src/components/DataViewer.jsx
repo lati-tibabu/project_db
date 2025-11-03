@@ -14,7 +14,8 @@ import {
 const createEmptyColumn = () => ({ name: '', type: 'VARCHAR(255)', nullable: true, defaultValue: '', isPrimaryKey: false });
 const createEmptyForeignKey = () => ({ column: '', referencesTable: '', referencesColumn: '', onDelete: 'NO ACTION', onUpdate: 'NO ACTION' });
 
-function DataViewer({ databaseId }) {
+function DataViewer({ databaseId, dbId }) {
+  const resolvedDbId = databaseId ?? dbId;
   const dispatch = useDispatch();
   const {
     activeDatabaseId,
@@ -49,34 +50,34 @@ function DataViewer({ databaseId }) {
   const tablesPerPage = 10;
 
   useEffect(() => {
-    if (!databaseId) return;
-    if (activeDatabaseId !== databaseId) {
-      dispatch(setActiveDatabase(databaseId));
+    if (!resolvedDbId) return;
+    if (activeDatabaseId !== resolvedDbId) {
+      dispatch(setActiveDatabase(resolvedDbId));
     }
-  }, [databaseId, activeDatabaseId, dispatch]);
+  }, [resolvedDbId, activeDatabaseId, dispatch]);
 
   useEffect(() => {
-    if (!databaseId) return;
-    if (activeDatabaseId !== databaseId) return;
+    if (!resolvedDbId) return;
+    if (activeDatabaseId !== resolvedDbId) return;
     if (tablesStatus === 'idle') {
-      dispatch(fetchTables(databaseId));
+      dispatch(fetchTables(resolvedDbId));
     }
-  }, [databaseId, activeDatabaseId, tablesStatus, dispatch]);
+  }, [resolvedDbId, activeDatabaseId, tablesStatus, dispatch]);
 
   useEffect(() => {
-    if (!databaseId || !selectedTable) return;
-    dispatch(fetchSchema({ dbId: databaseId, tableName: selectedTable }));
-  }, [databaseId, selectedTable, dispatch]);
+    if (!resolvedDbId || !selectedTable) return;
+    dispatch(fetchSchema({ dbId: resolvedDbId, tableName: selectedTable }));
+  }, [resolvedDbId, selectedTable, dispatch]);
 
   useEffect(() => {
-    if (!databaseId || !selectedTable) return;
+    if (!resolvedDbId || !selectedTable) return;
     dispatch(fetchTableRows({
-      dbId: databaseId,
+      dbId: resolvedDbId,
       tableName: selectedTable,
       limit: pagination.limit,
       offset: pagination.offset
     }));
-  }, [databaseId, selectedTable, pagination.limit, pagination.offset, dispatch]);
+  }, [resolvedDbId, selectedTable, pagination.limit, pagination.offset, dispatch]);
 
   const tablesLoading = tablesStatus === 'loading';
   const dataLoading = tableDataStatus === 'loading';
@@ -98,12 +99,12 @@ function DataViewer({ databaseId }) {
   };
 
   const handleRefresh = () => {
-    if (!databaseId) return;
-    dispatch(fetchTables(databaseId));
+    if (!resolvedDbId) return;
+    dispatch(fetchTables(resolvedDbId));
     if (selectedTable) {
-      dispatch(fetchSchema({ dbId: databaseId, tableName: selectedTable }));
+      dispatch(fetchSchema({ dbId: resolvedDbId, tableName: selectedTable }));
       dispatch(fetchTableRows({
-        dbId: databaseId,
+        dbId: resolvedDbId,
         tableName: selectedTable,
         limit: pagination.limit,
         offset: pagination.offset
@@ -120,10 +121,10 @@ function DataViewer({ databaseId }) {
   };
 
   const handleInsertRow = async () => {
-    if (!databaseId || !selectedTable) return;
+    if (!resolvedDbId || !selectedTable) return;
     try {
       await dispatch(insertTableRow({
-        dbId: databaseId,
+        dbId: resolvedDbId,
         tableName: selectedTable,
         rowData: insertForm
       })).unwrap();

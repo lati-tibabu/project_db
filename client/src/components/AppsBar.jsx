@@ -10,7 +10,7 @@ function AppsBar() {
   const selectedAppId = useSelector(s => s.apps.activeAppId);
   const openAppIds = useSelector(s => s.apps.openAppIds);
 
-  const [form, setForm] = useState({ name: '', databaseId: '', description: '' });
+  const [form, setForm] = useState({ name: '', databaseId: '', description: '', authEnabled: false });
   const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'default');
 
   useEffect(() => {
@@ -28,7 +28,7 @@ function AppsBar() {
     if (!form.name || !form.databaseId) return;
     try {
       await dispatch(addApp(form)).unwrap();
-      setForm({ name: '', databaseId: '', description: '' });
+      setForm({ name: '', databaseId: '', description: '', authEnabled: false });
     } catch (err) {
       // handle error lightly
       alert(err || 'Failed to create app');
@@ -95,6 +95,15 @@ function AppsBar() {
           {databases.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         <input placeholder="Description (optional)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <div className="checkbox-group" style={{ marginBottom: '0.5rem' }}>
+          <input
+            type="checkbox"
+            id="authEnabled"
+            checked={form.authEnabled}
+            onChange={e => setForm(f => ({ ...f, authEnabled: e.target.checked }))}
+          />
+          <label htmlFor="authEnabled" style={{ fontSize: '0.9rem' }}>Enable user authentication</label>
+        </div>
         <button className="btn btn-primary" type="submit">Create App</button>
       </form>
     </div>

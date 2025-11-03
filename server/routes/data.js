@@ -53,6 +53,8 @@ router.get('/:dbId/tables/:tableName/data', async (req, res) => {
 
 // Execute a custom query
 router.post('/:dbId/query', async (req, res) => {
+  const startTime = process.hrtime.bigint();
+  
   try {
     const database = storage.getDatabase(req.params.dbId);
     if (!database) {
@@ -77,9 +79,22 @@ router.post('/:dbId/query', async (req, res) => {
     }
     
     const result = await executeQuery(database, query, params || []);
-    res.json(result);
+    const endTime = process.hrtime.bigint();
+    const executionTimeMs = Number(endTime - startTime) / 1000000; // Convert to milliseconds
+    
+    res.json({
+      ...result,
+      executionTime: Math.round(executionTimeMs)
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Query execution failed', message: error.message });
+    const endTime = process.hrtime.bigint();
+    const executionTimeMs = Number(endTime - startTime) / 1000000;
+    
+    res.status(500).json({ 
+      error: 'Query execution failed', 
+      message: error.message,
+      executionTime: Math.round(executionTimeMs)
+    });
   }
 });
 

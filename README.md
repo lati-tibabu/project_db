@@ -23,6 +23,7 @@ The system includes a powerful app builder that allows you to create custom appl
 
 ### App Management
 - **Create Apps**: Build custom applications linked to your databases
+- **Authentication Control**: Choose whether to enable user authentication for each app
 - **Component System**: Add pre-built components like dashboards, data views, forms, and charts
 - **Dedicated URLs**: Each app gets its own route (e.g., `/app/app-id`) for direct access
 - **Multi-Tab Interface**: Open multiple apps in tabs within the dashboard
@@ -214,11 +215,12 @@ LEFT JOIN users u ON t.assigned_user_id = u.id;
 
 ## Security Features
 
-1. **Encrypted Credentials**: All database passwords are encrypted using AES encryption before storage
-2. **SQL Injection Protection**: Parameterized queries and input validation
-3. **Limited Query Types**: Only SELECT, INSERT, UPDATE, and DELETE queries allowed
-4. **Local Storage**: Credentials stored locally on device, never sent to external servers
-5. **Connection Validation**: Connections tested before saving
+1. **Optional User Authentication**: Apps can be created with or without user authentication
+2. **Encrypted Credentials**: All database passwords are encrypted using AES encryption before storage
+3. **SQL Injection Protection**: Parameterized queries and input validation
+4. **Limited Query Types**: Only SELECT, INSERT, UPDATE, and DELETE queries allowed
+5. **Local Storage**: Credentials stored locally on device, never sent to external servers
+6. **Connection Validation**: Connections tested before saving
 
 ## Project Structure
 
