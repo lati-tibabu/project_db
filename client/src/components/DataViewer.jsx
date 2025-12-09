@@ -10,6 +10,7 @@ import {
   createDatabaseTable,
   insertTableRow
 } from '../store/slices/dataSlice';
+import { deleteRow } from '../services/api';
 
 const createEmptyColumn = () => ({ name: '', type: 'VARCHAR(255)', nullable: true, defaultValue: '', isPrimaryKey: false });
 const createEmptyForeignKey = () => ({ column: '', referencesTable: '', referencesColumn: '', onDelete: 'NO ACTION', onUpdate: 'NO ACTION' });
@@ -48,6 +49,7 @@ function DataViewer({ databaseId, dbId }) {
   const [insertForm, setInsertForm] = useState({});
   const [tablesPage, setTablesPage] = useState(1);
   const tablesPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!resolvedDbId) return;
@@ -135,6 +137,39 @@ function DataViewer({ databaseId, dbId }) {
     }
   };
 
+  const handleDeleteRow = async (row) => {
+    if (!window.confirm('Are you sure you want to delete this row?')) return;
+
+    try {
+      // Find primary key columns or use first column as identifier
+      const primaryKeyColumns = schema.filter(col => col.is_primary_key);
+      const identifierColumns = primaryKeyColumns.length > 0 ? primaryKeyColumns : [schema[0]];
+
+      // Build WHERE clause
+      const whereConditions = identifierColumns.map(col => {
+        const value = row[col.column_name];
+        if (value === null || value === undefined) {
+          return `${col.column_name} IS NULL`;
+        }
+        // For simplicity, assume string values; in production, handle types properly
+        return `${col.column_name} = '${String(value).replace(/'/g, "''")}'`;
+      });
+
+      const where = whereConditions.join(' AND ');
+
+      await deleteRow(resolvedDbId, selectedTable, where);
+      // Refresh data after deletion
+      dispatch(fetchTableRows({
+        dbId: resolvedDbId,
+        tableName: selectedTable,
+        limit: pagination.limit,
+        offset: pagination.offset
+      }));
+    } catch (err) {
+      alert('Failed to delete row: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
+    }
+  };
+
   const addColumn = () => {
     setCreateForm(prev => ({
       ...prev,
@@ -186,6 +221,21 @@ function DataViewer({ databaseId, dbId }) {
     setTablesPage(page);
   };
 
+  // Filter tables based on search term
+  const filteredTables = tables.filter(table =>
+    table.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredTablesTotalPages = Math.ceil(filteredTables.length / tablesPerPage);
+  const filteredTablesStartIndex = (tablesPage - 1) * tablesPerPage;
+  const filteredTablesEndIndex = filteredTablesStartIndex + tablesPerPage;
+  const paginatedFilteredTables = filteredTables.slice(filteredTablesStartIndex, filteredTablesEndIndex);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setTablesPage(1); // Reset to first page when searching
+  };
+
   const rows = tableResult?.rows || [];
   const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
   const lastRefreshedLabel = lastRefreshedAt ? new Date(lastRefreshedAt).toLocaleTimeString() : 'Never';
@@ -212,24 +262,47 @@ function DataViewer({ databaseId, dbId }) {
             <p>No tables found in this database</p>
           </div>
         ) : (
-          <div className="table-list">
-            {paginatedTables.map(table => (
-              <div
-                key={table}
-                className="table-item"
-                onClick={() => handleSelectTable(table)}
+          <>
+            <div className="search-container" style={{ marginBottom: '1rem' }}>
+              <input
+                type="text"
+                placeholder="Search tables..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
                 style={{
-                  backgroundColor: selectedTable === table ? '#f0f8ff' : 'white',
-                  borderColor: selectedTable === table ? '#3498db' : '#e0e0e0'
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
                 }}
-              >
-                {table}
-              </div>
-            ))}
-          </div>
+              />
+              {searchTerm && (
+                <small style={{ display: 'block', marginTop: '0.5rem', color: '#666' }}>
+                  Showing {filteredTables.length} of {tables.length} tables
+                </small>
+              )}
+            </div>
+            <div className="table-list">
+              {paginatedFilteredTables.map(table => (
+                <div
+                  key={table}
+                  className="table-item"
+                  onClick={() => handleSelectTable(table)}
+                  style={{
+                    backgroundColor: selectedTable === table ? '#f0f8ff' : 'white',
+                    borderColor: selectedTable === table ? '#3498db' : '#e0e0e0'
+                  }}
+                >
+                  {table}
+                </div>
+              ))}
+            </div>
+          </>
         )}
         
-        {tablesTotalPages > 1 && (
+        {filteredTablesTotalPages > 1 && (
           <div className="pagination">
             <button
               className="btn btn-secondary"
@@ -238,11 +311,11 @@ function DataViewer({ databaseId, dbId }) {
             >
               Previous
             </button>
-            <span>Page {tablesPage} of {tablesTotalPages}</span>
+            <span>Page {tablesPage} of {filteredTablesTotalPages}</span>
             <button
               className="btn btn-secondary"
               onClick={() => handleTablesPageChange(tablesPage + 1)}
-              disabled={tablesPage === tablesTotalPages}
+              disabled={tablesPage === filteredTablesTotalPages}
             >
               Next
             </button>
@@ -304,6 +377,7 @@ function DataViewer({ databaseId, dbId }) {
                       {columns.map((key) => (
                         <th key={key}>{key}</th>
                       ))}
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -312,6 +386,15 @@ function DataViewer({ databaseId, dbId }) {
                         {columns.map((key) => (
                           <td key={key}>{row[key] !== null ? String(row[key]) : 'NULL'}</td>
                         ))}
+                        <td>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteRow(row)}
+                            disabled={dataLoading}
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

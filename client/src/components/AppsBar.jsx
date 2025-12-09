@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchApps, addApp, openAppInTab, closeAppTab, setActiveApp } from '../store/slices/appsSlice';
 import { fetchDatabases } from '../store/slices/databasesSlice';
+import AppCreationForm from './AppCreationForm';
 
 function AppsBar() {
   const dispatch = useDispatch();
@@ -9,9 +10,31 @@ function AppsBar() {
   const { items: databases } = useSelector(s => s.databases);
   const selectedAppId = useSelector(s => s.apps.activeAppId);
   const openAppIds = useSelector(s => s.apps.openAppIds);
+  
+  // State for theme management
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'default';
+  });
+  
+  // State for app creation form
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const [form, setForm] = useState({ name: '', databaseId: '', description: '', authEnabled: false });
-  const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'default');
+  const getIconEmoji = (iconId) => {
+    const icons = {
+      'dashboard': '📊', 'shopping-cart': '🛒', 'building': '🏢', 'users': '👥',
+      'book': '📚', 'calendar': '📅', 'chart-bar': '📈', 'clipboard': '📋',
+      'cog': '⚙️', 'database': '🗄️', 'envelope': '✉️', 'globe': '🌐',
+      'heart': '❤️', 'home': '🏠', 'lightbulb': '💡', 'map': '🗺️',
+      'money': '💰', 'music': '🎵', 'phone': '📞', 'plane': '✈️',
+      'rocket': '🚀', 'shield': '🛡️', 'star': '⭐', 'trophy': '🏆', 'wrench': '🔧'
+    };
+    return icons[iconId] || '📱';
+  };
+
+  const getDatabaseName = (databaseId) => {
+    const db = databases.find(d => d.id === databaseId);
+    return db ? db.name : 'Unknown Database';
+  };
 
   useEffect(() => {
     if (status === 'idle') dispatch(fetchApps());
@@ -23,16 +46,16 @@ function AppsBar() {
     localStorage.setItem('theme', currentTheme);
   }, [currentTheme]);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!form.name || !form.databaseId) return;
-    try {
-      await dispatch(addApp(form)).unwrap();
-      setForm({ name: '', databaseId: '', description: '', authEnabled: false });
-    } catch (err) {
-      // handle error lightly
-      alert(err || 'Failed to create app');
-    }
+  const handleCreateApp = () => {
+    setShowCreateForm(true);
+  };
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+  };
+
+  const handleCreateCancel = () => {
+    setShowCreateForm(false);
   };
 
   return (
@@ -55,9 +78,15 @@ function AppsBar() {
             key={a.id}
             className={`app-item ${selectedAppId === a.id ? 'active' : ''} ${openAppIds.includes(a.id) ? 'open' : ''}`}
           >
-            <span onClick={() => dispatch(setActiveApp(a.id))}>
-              {a.name}
-            </span>
+            <div className="app-icon">
+              {a.icon ? getIconEmoji(a.icon) : '📱'}
+            </div>
+            <div className="app-info">
+              <span className="app-name" onClick={() => dispatch(setActiveApp(a.id))}>
+                {a.name}
+              </span>
+              <span className="app-database">{getDatabaseName(a.databaseId)}</span>
+            </div>
             <div className="app-actions">
               {!openAppIds.includes(a.id) ? (
                 <button
@@ -88,24 +117,24 @@ function AppsBar() {
         ))}
       </div>
 
-      <form onSubmit={handleCreate} className="app-create-form">
-        <input placeholder="App name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-        <select value={form.databaseId} onChange={e => setForm(f => ({ ...f, databaseId: e.target.value }))}>
-          <option value="">Link database...</option>
-          {databases.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-        <input placeholder="Description (optional)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-        <div className="checkbox-group" style={{ marginBottom: '0.5rem' }}>
-          <input
-            type="checkbox"
-            id="authEnabled"
-            checked={form.authEnabled}
-            onChange={e => setForm(f => ({ ...f, authEnabled: e.target.checked }))}
-          />
-          <label htmlFor="authEnabled" style={{ fontSize: '0.9rem' }}>Enable user authentication</label>
+      <div className="apps-actions">
+        <button className="btn btn-primary" onClick={handleCreateApp}>
+          ➕ Create New App
+        </button>
+      </div>
+
+      {showCreateForm && (
+        <div className="modal-overlay" onClick={handleCreateCancel}>
+          <div className="modal app-creation-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <AppCreationForm
+                onSuccess={handleCreateSuccess}
+                onCancel={handleCreateCancel}
+              />
+            </div>
+          </div>
         </div>
-        <button className="btn btn-primary" type="submit">Create App</button>
-      </form>
+      )}
     </div>
   );
 }

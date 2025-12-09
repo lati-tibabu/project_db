@@ -18,7 +18,15 @@ router.get('/', (req, res) => {
 // Create a new app
 router.post('/', async (req, res) => {
   try {
-    const { name, databaseId, description, authEnabled } = req.body;
+    const {
+      name,
+      databaseId,
+      description,
+      authEnabled,
+      icon,
+      theme,
+      publicAccess
+    } = req.body;
 
     if (!name || !databaseId) {
       return res.status(400).json({
@@ -31,7 +39,10 @@ router.post('/', async (req, res) => {
       name,
       databaseId,
       description: description || '',
-      authEnabled: authEnabled !== undefined ? authEnabled : false, // Default to false (no auth required)
+      authEnabled: authEnabled !== undefined ? authEnabled : false,
+      icon: icon || 'dashboard',
+      theme: theme || 'default',
+      publicAccess: publicAccess !== undefined ? publicAccess : false,
       components: []
     });
 

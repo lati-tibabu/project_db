@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const storage = require('../utils/storage');
-const { testConnection, createDatabaseIfNotExists } = require('../utils/database');
+const { testConnection, createDatabaseIfNotExists, executeQuery, getTables } = require('../utils/database');
 const { loadConfig } = require('../utils/config');
 
 const toBoolean = (value) => {
@@ -249,6 +249,141 @@ router.post('/create', async (req, res) => {
     res.status(201).json({ message: `Database '${database}' created successfully on ${host}:${normalizedPort}` });
   } catch (error) {
     res.status(500).json({ error: 'Failed to create database', message: error.message });
+  }
+});
+
+// Get database summary statistics
+router.get('/summary/stats', async (req, res) => {
+  try {
+    const databases = storage.getDatabases();
+    const summary = {
+      totalDatabases: databases.length,
+      totalTables: 0,
+      totalRecords: 0,
+      totalSize: 0,
+      databases: []
+    };
+
+    for (const db of databases) {
+      try {
+        const tables = await getTables(db);
+        let dbRecords = 0;
+        let dbSize = 0;
+
+        // Get record counts and size for each table
+        for (const table of tables.slice(0, 20)) { // Limit to first 20 tables for performance
+          try {
+            const countResult = await executeQuery(db, `SELECT COUNT(*)::bigint as count FROM "${table.replace(/"/g, '""')}"`);
+            dbRecords += parseInt(countResult.rows[0]?.count || 0);
+
+            // Get table size (approximate)
+            const sizeResult = await executeQuery(db, `SELECT pg_total_relation_size('"${table.replace(/"/g, '""')}"') as size`);
+            dbSize += parseInt(sizeResult.rows[0]?.size || 0);
+          } catch (err) {
+            // Skip tables that can't be queried
+            console.warn(`Could not query table ${table} in database ${db.name}:`, err.message);
+          }
+        }
+
+        summary.databases.push({
+          id: db.id,
+          name: db.name,
+          tables: tables.length,
+          records: dbRecords,
+          size: dbSize
+        });
+
+        summary.totalTables += tables.length;
+        summary.totalRecords += dbRecords;
+        summary.totalSize += dbSize;
+      } catch (err) {
+        console.warn(`Could not connect to database ${db.name}:`, err.message);
+        summary.databases.push({
+          id: db.id,
+          name: db.name,
+          error: 'Connection failed'
+        });
+      }
+    }
+
+    res.json(summary);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get database summary', message: error.message });
+  }
+});
+
+// Get database activity trends (mock data for now - would need actual logging)
+router.get('/activity/trends', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 7;
+    const databases = storage.getDatabases();
+
+    // Generate mock activity data - in a real app, this would come from logs
+    const trends = [];
+    const now = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+
+      const dayData = {
+        date: date.toISOString().split('T')[0],
+        queries: Math.floor(Math.random() * 100) + 10,
+        connections: Math.floor(Math.random() * 20) + 5,
+        databases: databases.length
+      };
+
+      trends.push(dayData);
+    }
+
+    res.json(trends);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get activity trends', message: error.message });
+  }
+});
+
+// Get recent queries across all databases (mock data - would need actual query logging)
+router.get('/queries/recent', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const databases = storage.getDatabases();
+
+    // Generate mock recent queries - in a real app, this would come from query logs
+    const mockQueries = [
+      'SELECT * FROM users LIMIT 100',
+      'SELECT COUNT(*) FROM orders WHERE status = \'completed\'',
+      'INSERT INTO products (name, price) VALUES (\'New Product\', 29.99)',
+      'UPDATE users SET last_login = NOW() WHERE id = 123',
+      'SELECT * FROM analytics WHERE date >= \'2025-01-01\'',
+      'DELETE FROM temp_data WHERE created_at < NOW() - INTERVAL \'30 days\'',
+      'SELECT AVG(price) FROM products GROUP BY category',
+      'CREATE INDEX idx_users_email ON users(email)',
+      'SELECT * FROM logs ORDER BY timestamp DESC LIMIT 50',
+      'UPDATE settings SET value = \'new_config\' WHERE key = \'theme\''
+    ];
+
+    const recentQueries = [];
+    for (let i = 0; i < limit; i++) {
+      const db = databases[Math.floor(Math.random() * databases.length)];
+      const query = mockQueries[Math.floor(Math.random() * mockQueries.length)];
+      const timestamp = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000); // Random time in last 24 hours
+
+      recentQueries.push({
+        id: `query_${i + 1}`,
+        database: db.name,
+        query: query,
+        timestamp: timestamp.toISOString(),
+        executionTime: Math.floor(Math.random() * 500) + 10, // Random execution time 10-510ms
+        success: Math.random() > 0.1 // 90% success rate
+      });
+    }
+
+    // Sort by timestamp (most recent first)
+    recentQueries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json(recentQueries);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get recent queries', message: error.message });
   }
 });
 

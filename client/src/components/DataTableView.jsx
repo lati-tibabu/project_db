@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getTableSchema, getTableData, executeQuery } from '../services/api';
+import { getTableSchema, getTableData, executeQuery, deleteRow } from '../services/api';
 import { editApp } from '../store/slices/appsSlice';
 
 const sanitizeIdentifier = (value) => {
@@ -103,6 +103,34 @@ function DataTableView({ component, dbId }) {
   const canNext = offset + limit < totalRows;
   const canPrev = offset > 0;
 
+  const handleDeleteRow = async (row) => {
+    if (!window.confirm('Are you sure you want to delete this row?')) return;
+
+    try {
+      // Find primary key columns or use first column as identifier
+      const primaryKeyColumns = schema.filter(col => col.is_primary_key);
+      const identifierColumns = primaryKeyColumns.length > 0 ? primaryKeyColumns : [schema[0]];
+
+      // Build WHERE clause
+      const whereConditions = identifierColumns.map(col => {
+        const value = row[col.column_name];
+        if (value === null || value === undefined) {
+          return `${col.column_name} IS NULL`;
+        }
+        // For simplicity, assume string values; in production, handle types properly
+        return `${col.column_name} = '${String(value).replace(/'/g, "''")}'`;
+      });
+
+      const where = whereConditions.join(' AND ');
+
+      await deleteRow(dbId, tableName, where);
+      // Refresh data after deletion
+      await fetchData();
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to delete row');
+    }
+  };
+
   return (
     <div className="component data-table">
       <div className="component-config" style={{ marginBottom: '1rem' }}>
@@ -147,12 +175,13 @@ function DataTableView({ component, dbId }) {
                   {schema.map(column => (
                     <th key={column.column_name}>{column.column_name}</th>
                   ))}
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={schema.length} style={{ textAlign: 'center' }}>No rows returned.</td>
+                    <td colSpan={schema.length + 1} style={{ textAlign: 'center' }}>No rows returned.</td>
                   </tr>
                 ) : (
                   rows.map((row, index) => (
@@ -164,6 +193,15 @@ function DataTableView({ component, dbId }) {
                             : 'NULL'}
                         </td>
                       ))}
+                      <td>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDeleteRow(row)}
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

@@ -41,6 +41,26 @@ export const testDatabaseConnection = async (id) => {
   return response.data;
 };
 
+// Database Summary APIs
+export const getDatabaseSummary = async () => {
+  const response = await axios.get(`${API_BASE_URL}/databases/summary/stats`);
+  return response.data;
+};
+
+export const getDatabaseActivityTrends = async (days = 7) => {
+  const response = await axios.get(`${API_BASE_URL}/databases/activity/trends`, {
+    params: { days }
+  });
+  return response.data;
+};
+
+export const getRecentQueries = async (limit = 10) => {
+  const response = await axios.get(`${API_BASE_URL}/databases/queries/recent`, {
+    params: { limit }
+  });
+  return response.data;
+};
+
 // Data APIs
 export const getTables = async (dbId) => {
   const response = await axios.get(`${API_BASE_URL}/data/${dbId}/tables`);

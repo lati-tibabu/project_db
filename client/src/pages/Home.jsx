@@ -7,6 +7,7 @@ import DataViewer from '../components/DataViewer';
 import QueryEditor from '../components/QueryEditor';
 import AppsBar from '../components/AppsBar';
 import AppView from '../components/AppView';
+import DatabaseSummaryDashboard from '../components/DatabaseSummaryDashboard';
 import { fetchDatabases, setSelectedDatabase } from '../store/slices/databasesSlice';
 import { setActiveDatabase } from '../store/slices/dataSlice';
 
@@ -16,7 +17,7 @@ function Home() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formMode, setFormMode] = useState(null); // 'add' or 'create'
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [activeMainTab, setActiveMainTab] = useState('databases');
+  const [activeMainTab, setActiveMainTab] = useState('dashboard');
   const [activeSubTab, setActiveSubTab] = useState('databases');
 
   useEffect(() => {
@@ -35,11 +36,11 @@ function Home() {
           setShowAddForm(true);
         }
       }
-      // Ctrl/Cmd + 1-2: Switch main tabs
-      if ((e.ctrlKey || e.metaKey) && ['1', '2'].includes(e.key)) {
+      // Ctrl/Cmd + 1-3: Switch main tabs
+      if ((e.ctrlKey || e.metaKey) && ['1', '2', '3'].includes(e.key)) {
         e.preventDefault();
         const tabIndex = parseInt(e.key) - 1;
-        const tabs = ['databases', 'apps'];
+        const tabs = ['dashboard', 'databases', 'apps'];
         if (tabs[tabIndex]) {
           setActiveMainTab(tabs[tabIndex]);
         }
@@ -103,6 +104,12 @@ function Home() {
       {/* Main Tabs */}
       <div className="main-tabs">
         <button
+          className={`main-tab ${activeMainTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveMainTab('dashboard')}
+        >
+          📊 Dashboard
+        </button>
+        <button
           className={`main-tab ${activeMainTab === 'databases' ? 'active' : ''}`}
           onClick={() => setActiveMainTab('databases')}
         >
@@ -122,6 +129,13 @@ function Home() {
           ?
         </button>
       </div>
+
+      {/* Dashboard Tab Content */}
+      {activeMainTab === 'dashboard' && (
+        <div className="tab-content">
+          <DatabaseSummaryDashboard />
+        </div>
+      )}
 
       {/* Databases Tab Content */}
       {activeMainTab === 'databases' && (
@@ -235,10 +249,14 @@ function Home() {
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl+1</kbd>
-                  <span>Switch to Databases tab</span>
+                  <span>Switch to Dashboard tab</span>
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl+2</kbd>
+                  <span>Switch to Databases tab</span>
+                </div>
+                <div className="shortcut-item">
+                  <kbd>Ctrl+3</kbd>
                   <span>Switch to Apps tab</span>
                 </div>
                 <div className="shortcut-item">
