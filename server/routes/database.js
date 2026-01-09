@@ -363,19 +363,21 @@ router.get('/queries/recent', async (req, res) => {
     ];
 
     const recentQueries = [];
-    for (let i = 0; i < limit; i++) {
-      const db = databases[Math.floor(Math.random() * databases.length)];
-      const query = mockQueries[Math.floor(Math.random() * mockQueries.length)];
-      const timestamp = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000); // Random time in last 24 hours
+    if (databases.length > 0) {
+      for (let i = 0; i < limit; i++) {
+        const db = databases[Math.floor(Math.random() * databases.length)];
+        const query = mockQueries[Math.floor(Math.random() * mockQueries.length)];
+        const timestamp = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000); // Random time in last 24 hours
 
-      recentQueries.push({
-        id: `query_${i + 1}`,
-        database: db.name,
-        query: query,
-        timestamp: timestamp.toISOString(),
-        executionTime: Math.floor(Math.random() * 500) + 10, // Random execution time 10-510ms
-        success: Math.random() > 0.1 // 90% success rate
-      });
+        recentQueries.push({
+          id: `query_${i + 1}`,
+          database: db.name,
+          query: query,
+          timestamp: timestamp.toISOString(),
+          executionTime: Math.floor(Math.random() * 500) + 10, // Random execution time 10-510ms
+          success: Math.random() > 0.1 // 90% success rate
+        });
+      }
     }
 
     // Sort by timestamp (most recent first)
