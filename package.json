@@ -22,7 +22,6 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-session": "^1.17.3",
-    "lucide-react": "^0.552.0",
     "pg": "^8.16.3",
     "pg-format": "^1.0.4",
     "react-syntax-highlighter": "^16.1.0"
