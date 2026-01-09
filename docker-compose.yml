@@ -1,10 +1,22 @@
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=project_db
+      - POSTGRES_USER=project_db
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "5005:5000"
+    depends_on:
+      - db
     volumes:
       - ./data:/app/data
     environment:
@@ -12,6 +24,11 @@ services:
       - PORT=5000
       - SESSION_SECRET=${SESSION_SECRET:-some-secure-secret}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-default-secure-key}
+      - APP_DB_HOST=db
+      - APP_DB_PORT=5432
+      - APP_DB_NAME=project_db
+      - APP_DB_USER=postgres
+      - APP_DB_PASSWORD=password
     restart: always
 
   client:
@@ -23,3 +40,7 @@ services:
     depends_on:
       - api
     restart: always
+
+volumes:
+  postgres_data:
+

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getDatabase } = require('../utils/storage');
+const storage = require('../utils/storage');
 const { executeQuery, sanitizeTableName } = require('../utils/database');
 
 // Dynamic API endpoints for tables
@@ -14,13 +14,13 @@ router.get('/api/:appId/:tableName', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
     if (!app) {
       return res.status(404).json({ error: 'App not found' });
     }
 
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
     if (!dbConfig) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -94,9 +94,9 @@ router.get('/api/:appId/:tableName/:id', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const safeTableName = sanitizeTableName(tableName);
     const query = `SELECT * FROM ${safeTableName} WHERE id = $1`;
@@ -130,9 +130,9 @@ router.post('/api/:appId/:tableName', async (req, res) => {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const safeTableName = sanitizeTableName(tableName);
 
@@ -193,9 +193,9 @@ router.put('/api/:appId/:tableName/:id', async (req, res) => {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const safeTableName = sanitizeTableName(tableName);
 
@@ -261,9 +261,9 @@ router.delete('/api/:appId/:tableName/:id', async (req, res) => {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const safeTableName = sanitizeTableName(tableName);
     const deleteQuery = `DELETE FROM ${safeTableName} WHERE id = $1 RETURNING *`;
@@ -290,13 +290,13 @@ router.get('/docs/:appId', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
     if (!app) {
       return res.status(404).json({ error: 'App not found' });
     }
 
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
     const tables = await require('../utils/database').getTables(dbConfig);
 
     const documentation = {

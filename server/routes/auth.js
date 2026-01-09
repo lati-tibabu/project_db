@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { getDatabase } = require('../utils/storage');
+const storage = require('../utils/storage');
 const { executeQuery } = require('../utils/database');
 
 const router = express.Router();
@@ -16,13 +16,13 @@ router.post('/login/:appId', async (req, res) => {
     }
 
     // Get the app's database config
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
     if (!app) {
       return res.status(404).json({ error: 'App not found' });
     }
 
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
     if (!dbConfig) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -114,9 +114,9 @@ router.post('/change-password/:appId', async (req, res) => {
     }
 
     // Get app and database
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const userId = req.session.authenticatedApps[appId].userId;
 
@@ -162,9 +162,9 @@ router.get('/users/:appId', async (req, res) => {
     }
 
     // Get app and database
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     const query = 'SELECT id, username, email, full_name, role, is_active, last_login, created_at FROM users ORDER BY created_at DESC';
     const result = await executeQuery(dbConfig, query);
@@ -196,9 +196,9 @@ router.post('/users/:appId', async (req, res) => {
     }
 
     // Get app and database
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -238,9 +238,9 @@ router.put('/users/:appId/:userId', async (req, res) => {
     }
 
     // Get app and database
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     // Update user
     const updateQuery = `
@@ -283,9 +283,9 @@ router.delete('/users/:appId/:userId', async (req, res) => {
     }
 
     // Get app and database
-    const apps = require('../utils/storage').getApps();
+    const apps = await storage.getApps();
     const app = apps.find(a => a.id === appId);
-    const dbConfig = getDatabase(app.databaseId);
+    const dbConfig = await storage.getDatabase(app.databaseId);
 
     // Delete user
     const deleteQuery = 'DELETE FROM users WHERE id = $1';

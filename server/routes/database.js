@@ -12,9 +12,9 @@ const toBoolean = (value) => {
 };
 
 // Get all database configurations
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const databases = storage.getDatabases();
+    const databases = await storage.getDatabases();
     // Don't send passwords to client
     const safeDatabases = databases.map(({ password, ...db }) => db);
     res.json(safeDatabases);
@@ -24,9 +24,9 @@ router.get('/', (req, res) => {
 });
 
 // Get a specific database configuration
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.id);
+    const database = await storage.getDatabase(req.params.id);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    const newDatabase = storage.addDatabase({
+    const newDatabase = await storage.addDatabase({
       name,
       host,
       port: normalizedPort,
@@ -146,7 +146,7 @@ router.post('/from-conf', async (req, res) => {
       return res.status(400).json({ error: 'Connection test failed', message: connectionTest.message });
     }
 
-    const newDatabase = storage.addDatabase({ name, host, port, database, user, password, ssl });
+    const newDatabase = await storage.addDatabase({ name, host, port, database, user, password, ssl });
     const { password: _, ...safeDatabase } = newDatabase;
     res.status(201).json(safeDatabase);
   } catch (error) {
@@ -159,7 +159,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { name, host, port, database, user, password, ssl } = req.body;
     
-    const existingDb = storage.getDatabase(req.params.id);
+    const existingDb = await storage.getDatabase(req.params.id);
     if (!existingDb) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -184,7 +184,7 @@ router.put('/:id', async (req, res) => {
       });
     }
     
-    const updatedDatabase = storage.updateDatabase(req.params.id, updates);
+    const updatedDatabase = await storage.updateDatabase(req.params.id, updates);
     
     // Don't send password to client
     const { password: _, ...safeDatabase } = updatedDatabase;
@@ -195,9 +195,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a database configuration
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = storage.deleteDatabase(req.params.id);
+    const deleted = await storage.deleteDatabase(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -210,7 +210,7 @@ router.delete('/:id', (req, res) => {
 // Test database connection
 router.post('/:id/test', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.id);
+    const database = await storage.getDatabase(req.params.id);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -255,7 +255,7 @@ router.post('/create', async (req, res) => {
 // Get database summary statistics
 router.get('/summary/stats', async (req, res) => {
   try {
-    const databases = storage.getDatabases();
+    const databases = await storage.getDatabases();
     const summary = {
       totalDatabases: databases.length,
       totalTables: 0,
@@ -316,7 +316,7 @@ router.get('/summary/stats', async (req, res) => {
 router.get('/activity/trends', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const databases = storage.getDatabases();
+    const databases = await storage.getDatabases();
 
     // Generate mock activity data - in a real app, this would come from logs
     const trends = [];
@@ -346,7 +346,7 @@ router.get('/activity/trends', async (req, res) => {
 router.get('/queries/recent', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const databases = storage.getDatabases();
+    const databases = await storage.getDatabases();
 
     // Generate mock recent queries - in a real app, this would come from query logs
     const mockQueries = [

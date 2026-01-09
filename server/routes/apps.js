@@ -2,13 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const storage = require('../utils/storage');
-const { getDatabase } = require('../utils/storage');
 const { createTable, executeQuery } = require('../utils/database');
 
 // List apps
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const apps = storage.getApps();
+    const apps = await storage.getApps();
     res.json(apps);
   } catch (err) {
     res.status(500).json({ error: 'Failed to list apps', message: err.message });
@@ -35,7 +34,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const newApp = storage.addApp({
+    const newApp = await storage.addApp({
       name,
       databaseId,
       description: description || '',
@@ -49,7 +48,7 @@ router.post('/', async (req, res) => {
     // Only create users table if authentication is enabled
     if (authEnabled) {
       try {
-        const dbConfig = getDatabase(databaseId);
+        const dbConfig = await storage.getDatabase(databaseId);
         if (dbConfig) {
           // Create users table
           await createTable(dbConfig, 'users', [
@@ -89,9 +88,9 @@ router.post('/', async (req, res) => {
 });
 
 // Update app
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    const updated = storage.updateApp(req.params.id, req.body);
+    const updated = await storage.updateApp(req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'App not found' });
     res.json(updated);
   } catch (err) {
@@ -100,9 +99,9 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete app
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const ok = storage.deleteApp(req.params.id);
+    const ok = await storage.deleteApp(req.params.id);
     if (!ok) return res.status(404).json({ error: 'App not found' });
     res.json({ message: 'App deleted' });
   } catch (err) {

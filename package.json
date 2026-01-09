@@ -24,6 +24,8 @@
     "express-session": "^1.17.3",
     "pg": "^8.16.3",
     "pg-format": "^1.0.4",
-    "react-syntax-highlighter": "^16.1.0"
+    "pg-hstore": "^2.3.4",
+    "react-syntax-highlighter": "^16.1.0",
+    "sequelize": "^6.37.5"
   }
 }

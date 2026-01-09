@@ -1,218 +1,143 @@
-const fs = require('fs');
-const path = require('path');
+const { DatabaseConfig, App } = require('../models');
 const { encrypt, decrypt } = require('./encryption');
-
-const STORAGE_DIR = path.join(__dirname, '../../data');
-const DATABASES_FILE = path.join(STORAGE_DIR, 'databases.json');
-const APPS_FILE = path.join(STORAGE_DIR, 'apps.json');
-
-// Ensure storage directory exists
-if (!fs.existsSync(STORAGE_DIR)) {
-  fs.mkdirSync(STORAGE_DIR, { recursive: true });
-}
 
 /**
  * Get all database configurations
- * @returns {Array} Array of database configurations
+ * @returns {Promise<Array>} Array of database configurations
  */
-function getDatabases() {
-  if (!fs.existsSync(DATABASES_FILE)) {
-    return [];
-  }
+async function getDatabases() {
+  const databases = await DatabaseConfig.findAll();
   
-  const data = fs.readFileSync(DATABASES_FILE, 'utf8');
-  if (!data.trim()) {
-    return [];
-  }
-  
-  const databases = JSON.parse(data);
-  
-  // Decrypt passwords
-  return databases.map(db => ({
-    ...db,
-    password: decrypt(db.password)
-  }));
-}
-
-/**
- * Save database configurations
- * @param {Array} databases - Array of database configurations
- */
-function saveDatabases(databases) {
-  // Encrypt passwords before saving
-  const encryptedDatabases = databases.map(db => ({
-    ...db,
-    password: encrypt(db.password)
-  }));
-  
-  fs.writeFileSync(DATABASES_FILE, JSON.stringify(encryptedDatabases, null, 2));
+  // Decrypt passwords and convert to plain objects
+  return databases.map(db => {
+    const data = db.toJSON();
+    return {
+      ...data,
+      password: decrypt(data.password)
+    };
+  });
 }
 
 /**
  * Add a new database configuration
  * @param {Object} database - Database configuration
- * @returns {Object} Added database with generated ID
+ * @returns {Promise<Object>} Added database
  */
-function addDatabase(database) {
-  const databases = getDatabases();
-  const newDatabase = {
-    id: Date.now().toString(),
+async function addDatabase(database) {
+  const encryptedPassword = encrypt(database.password);
+  
+  const newDb = await DatabaseConfig.create({
     ...database,
-    createdAt: new Date().toISOString()
+    password: encryptedPassword
+  });
+  
+  const data = newDb.toJSON();
+  return {
+    ...data,
+    password: decrypt(data.password)
   };
-  
-  databases.push(newDatabase);
-  saveDatabases(databases);
-  
-  return newDatabase;
 }
 
 /**
  * Update a database configuration
  * @param {string} id - Database ID
  * @param {Object} updates - Updates to apply
- * @returns {Object|null} Updated database or null if not found
+ * @returns {Promise<Object|null>} Updated database or null if not found
  */
-function updateDatabase(id, updates) {
-  const databases = getDatabases();
-  const index = databases.findIndex(db => db.id === id);
-  
-  if (index === -1) {
-    return null;
+async function updateDatabase(id, updates) {
+  const db = await DatabaseConfig.findByPk(id);
+  if (!db) return null;
+
+  if (updates.password) {
+    updates.password = encrypt(updates.password);
   }
+
+  await db.update(updates);
   
-  databases[index] = {
-    ...databases[index],
-    ...updates,
-    id: databases[index].id, // Ensure ID doesn't change
-    updatedAt: new Date().toISOString()
+  const data = db.toJSON();
+  return {
+    ...data,
+    password: decrypt(data.password)
   };
-  
-  saveDatabases(databases);
-  return databases[index];
 }
 
 /**
  * Delete a database configuration
  * @param {string} id - Database ID
- * @returns {boolean} True if deleted, false if not found
+ * @returns {Promise<boolean>} True if deleted, false if not found
  */
-function deleteDatabase(id) {
-  const databases = getDatabases();
-  const filteredDatabases = databases.filter(db => db.id !== id);
-  
-  if (filteredDatabases.length === databases.length) {
-    return false;
-  }
-  
-  saveDatabases(filteredDatabases);
-  return true;
+async function deleteDatabase(id) {
+  const deletedCount = await DatabaseConfig.destroy({ where: { id } });
+  return deletedCount > 0;
 }
 
 /**
  * Get a specific database configuration
  * @param {string} id - Database ID
- * @returns {Object|null} Database configuration or null if not found
+ * @returns {Promise<Object|null>} Database configuration or null if not found
  */
-function getDatabase(id) {
-  const databases = getDatabases();
-  return databases.find(db => db.id === id) || null;
+async function getDatabase(id) {
+  const db = await DatabaseConfig.findByPk(id);
+  if (!db) return null;
+
+  const data = db.toJSON();
+  return {
+    ...data,
+    password: decrypt(data.password)
+  };
 }
 
 /**
  * Get all apps
- * @returns {Array} Array of app configurations
+ * @returns {Promise<Array>} Array of app configurations
  */
-function getApps() {
-  if (!fs.existsSync(APPS_FILE)) {
-    return [];
-  }
-  
-  const data = fs.readFileSync(APPS_FILE, 'utf8');
-  if (!data.trim()) {
-    return [];
-  }
-  
-  return JSON.parse(data);
-}
-
-/**
- * Save app configurations
- * @param {Array} apps - Array of app configurations
- */
-function saveApps(apps) {
-  fs.writeFileSync(APPS_FILE, JSON.stringify(apps, null, 2));
+async function getApps() {
+  const apps = await App.findAll();
+  return apps.map(app => app.toJSON());
 }
 
 /**
  * Add a new app
  * @param {Object} app - App configuration
- * @returns {Object} Added app with generated ID
+ * @returns {Promise<Object>} Added app
  */
-function addApp(app) {
-  const apps = getApps();
-  const newApp = {
-    id: Date.now().toString(),
-    ...app,
-    createdAt: new Date().toISOString()
-  };
-  
-  apps.push(newApp);
-  saveApps(apps);
-  
-  return newApp;
+async function addApp(app) {
+  const newApp = await App.create(app);
+  return newApp.toJSON();
 }
 
 /**
  * Update an app
  * @param {string} id - App ID
  * @param {Object} updates - Updates to apply
- * @returns {Object|null} Updated app or null if not found
+ * @returns {Promise<Object|null>} Updated app or null if not found
  */
-function updateApp(id, updates) {
-  const apps = getApps();
-  const index = apps.findIndex(app => app.id === id);
-  
-  if (index === -1) {
-    return null;
-  }
-  
-  apps[index] = {
-    ...apps[index],
-    ...updates,
-    id: apps[index].id, // Ensure ID doesn't change
-    updatedAt: new Date().toISOString()
-  };
-  
-  saveApps(apps);
-  return apps[index];
+async function updateApp(id, updates) {
+  const app = await App.findByPk(id);
+  if (!app) return null;
+
+  await app.update(updates);
+  return app.toJSON();
 }
 
 /**
  * Delete an app
  * @param {string} id - App ID
- * @returns {boolean} True if deleted, false if not found
+ * @returns {Promise<boolean>} True if deleted, false if not found
  */
-function deleteApp(id) {
-  const apps = getApps();
-  const filteredApps = apps.filter(app => app.id !== id);
-  
-  if (filteredApps.length === apps.length) {
-    return false;
-  }
-  
-  saveApps(filteredApps);
-  return true;
+async function deleteApp(id) {
+  const deletedCount = await App.destroy({ where: { id } });
+  return deletedCount > 0;
 }
 
 /**
  * Get a specific app
  * @param {string} id - App ID
- * @returns {Object|null} App configuration or null if not found
+ * @returns {Promise<Object|null>} App configuration or null if not found
  */
-function getApp(id) {
-  const apps = getApps();
-  return apps.find(app => app.id === id) || null;
+async function getApp(id) {
+  const app = await App.findByPk(id);
+  return app ? app.toJSON() : null;
 }
 
 module.exports = {

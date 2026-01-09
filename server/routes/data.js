@@ -6,7 +6,7 @@ const { executeQuery, getTables, getTableSchema, getTableData, sanitizeTableName
 // Get all tables for a database
 router.get('/:dbId/tables', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -21,7 +21,7 @@ router.get('/:dbId/tables', async (req, res) => {
 // Get table schema
 router.get('/:dbId/tables/:tableName/schema', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -36,7 +36,7 @@ router.get('/:dbId/tables/:tableName/schema', async (req, res) => {
 // Get table data
 router.get('/:dbId/tables/:tableName/data', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -56,7 +56,7 @@ router.post('/:dbId/query', async (req, res) => {
   const startTime = process.hrtime.bigint();
   
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -101,7 +101,7 @@ router.post('/:dbId/query', async (req, res) => {
 // Insert data into a table
 router.post('/:dbId/tables/:tableName/rows', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -133,7 +133,7 @@ router.post('/:dbId/tables/:tableName/rows', async (req, res) => {
 // Update data in a table
 router.put('/:dbId/tables/:tableName/rows', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -174,7 +174,7 @@ router.put('/:dbId/tables/:tableName/rows', async (req, res) => {
 // Delete data from a table
 router.delete('/:dbId/tables/:tableName/rows', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
@@ -203,7 +203,7 @@ router.delete('/:dbId/tables/:tableName/rows', async (req, res) => {
 // Create a new table
 router.post('/:dbId/tables', async (req, res) => {
   try {
-    const database = storage.getDatabase(req.params.dbId);
+    const database = await storage.getDatabase(req.params.dbId);
     if (!database) {
       return res.status(404).json({ error: 'Database not found' });
     }
