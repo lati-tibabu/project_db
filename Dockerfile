@@ -6,9 +6,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
 
-# Copy server code and data
+# Copy server code
 COPY server/ ./server/
-COPY data/ ./data/
+
+# Create data directory (will be used if volume is not mounted)
+RUN mkdir -p data
 
 # Set environment variables
 ENV NODE_ENV=production
