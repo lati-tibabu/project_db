@@ -116,6 +116,12 @@ code {
   box-shadow: var(--shadow);
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .header h1 {
   margin: 0;
   font-size: 1.8rem;
@@ -125,6 +131,23 @@ code {
   margin: 0.5rem 0 0 0;
   opacity: 0.9;
   font-size: 0.95rem;
+}
+
+.db-status {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-connected {
+  color: #27ae60;
+}
+
+.status-disconnected {
+  color: #e74c3c;
+}
+
+.status-checking {
+  color: #f39c12;
 }
 
 .container {

@@ -192,3 +192,9 @@ export const callDynamicApi = async (method, appId, tableName, data = null, id =
   const response = await axios(config);
   return response.data;
 };
+
+// Health check
+export const getHealthStatus = async () => {
+  const response = await axios.get(`${API_BASE_URL}/health`);
+  return response.data;
+};

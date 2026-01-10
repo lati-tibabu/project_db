@@ -43,8 +43,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dynamic', dynamicApiRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ status: 'ok', message: 'Server is running', database: { connected: true } });
+  } catch (error) {
+    res.json({ status: 'ok', message: 'Server is running', database: { connected: false, error: error.message } });
+  }
 });
 
 // Error handling middleware
