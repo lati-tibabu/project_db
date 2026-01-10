@@ -8,6 +8,11 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U project_db -d project_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -16,7 +21,8 @@ services:
     ports:
       - "5005:5000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./data:/app/data
     environment:
@@ -27,7 +33,7 @@ services:
       - APP_DB_HOST=db
       - APP_DB_PORT=5432
       - APP_DB_NAME=project_db
-      - APP_DB_USER=postgres
+      - APP_DB_USER=project_db
       - APP_DB_PASSWORD=password
     restart: always
 
